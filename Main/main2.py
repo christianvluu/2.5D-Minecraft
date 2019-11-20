@@ -19,7 +19,7 @@ class Player(pygame.sprite.Sprite):
         self.gameX = gameCoords[0]  # integer
         self.gameY = gameCoords[1]
         self.gameZ = gameCoords[2]
-        self.direction = "y" # facing down to bottom left at first
+        self.direction = "y"  # facing down to bottom left at first
         # self.surfDownLeft = pygame.image.load("playerdownleft.png")
         # self.surfDownRight = pygame.image.load("playerdownright.png")
         # self.surfUpLeft = pygame.image.load("playerupleft.png")
@@ -40,7 +40,7 @@ class Player(pygame.sprite.Sprite):
         elif (dx < 0):
             self.direction = "-x"
         # direction dz doesn't matter
-        print("player pos: ", self.gameX, self.gameY, self.gameZ)
+        print("player pos: ", self.gameX, self.gameY, self.gameZ, self.direction)
         # should implement isLegalMove into move here...
         # probably should do bounds checking here also
     
@@ -173,7 +173,7 @@ class Minecraft(PygameGame):
                     self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                         playerPos)
 
-# Very heavily adapted from http://clintbellanger.net/articles/isometric_math/
+# Isometric drawing VERY HEAVILY adapted from http://clintbellanger.net/articles/isometric_math/
     def drawBlockColors(self, screen, blockObj, centerPos, playerPos):
         posX = playerPos[0]
         posY = playerPos[1]
