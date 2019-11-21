@@ -63,6 +63,7 @@ class Minecraft(PygameGame):
         self.margin = 25
         self.renderDist = 5  # blocks from user
         self.blockXWidth = (self.width - 2*self.margin)//(2*self.renderDist)
+        # background from http://www.tassal.com.au/sustainability/blue-background-png/
         self.background = pygame.image.load("background.png")
         self.screen.blit(self.background, (0, 0))
         self.gameBlockGroup = pygame.sprite.Group()
