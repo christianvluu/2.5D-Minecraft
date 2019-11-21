@@ -78,6 +78,7 @@ class Minecraft(PygameGame):
         # DIRT, GRASSDIRT, COBBLESTONE, WOOD, IRON
         # sid = side (short name)
         Minecraft.blockTex = {
+        # textures from https://github.com/supernick125/esap-final/tree/master/textures
             "dirtTop": pygame.image.load("textures/dirt.png").convert(),
             "dirtSidL": pygame.image.load("textures/dirt.png").convert(),
             "dirtSidR": pygame.image.load("textures/dirt.png").convert(),
