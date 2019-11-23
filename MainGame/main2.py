@@ -29,6 +29,16 @@ class Player(pygame.sprite.Sprite):
         # self.surfUpRight = pygame.image.load("playerupright.png")
     
     def move(self, dx, dy, dz, locationMap):
+        # keep track of where the player is facing (helpful for placing and
+        # destroying blocks) Also useful for movement also
+        if (dy > 0):
+            self.direction = "+y"
+        elif (dy < 0):
+            self.direction = "-y"
+        elif (dx > 0):
+            self.direction = "+x"
+        elif (dx < 0):
+            self.direction = "-x"
         if (self.getLegalPlayerPos(dx, dy, dz, locationMap) == False):
             print("Cannot move to:", (self.gameX + dx, self.gameY + dy, self.gameZ + dz), "Current Pos:", (self.gameX, self.gameY, self.gameZ))
             return False # cannot move
@@ -37,21 +47,11 @@ class Player(pygame.sprite.Sprite):
             self.gameX = x
             self.gameY = y
             self.gameZ = z
-            # keep track of where the player is facing (helpful for placing and
-            # destroying blocks) Also useful for movement also
-            if (dy > 0):
-                self.direction = "+y"
-            elif (dy < 0):
-                self.direction = "-y"
-            elif (dx > 0):
-                self.direction = "+x"
-            elif (dx < 0):
-                self.direction = "-x"
             print("Moved to:", (x, y, z), "/ Dir:", self.direction)
-        # # direction dz doesn't matter
-        # print("Player pos:", self.gameX, self.gameY, self.gameZ, "/ Dir:", self.direction)
-        # # should implement isLegalMove into move here...
-        # # probably should do bounds checking here also
+        
+            return True
+        # direction dz doesn't matter
+        # probably should do bounds checking here also
     
     def getPos(self):
         return (self.gameX, self.gameY, self.gameZ)
@@ -108,6 +108,55 @@ class Player(pygame.sprite.Sprite):
             if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z + 1].name == "empty"): # player takes up two z-blocks
                 return (x, y, z)
             else: return False
+    
+    def destroyBlock(self, locationMap, gameBlockGroup):
+        (x, y, z) = (self.gameX, self.gameY, self.gameZ)
+        if (self.direction == "+y"): # looking down at +y
+            if (locationMap[x, y + 1, z].name != "empty"):
+                emptyBlock = BlockObject("empty")
+                gameBlockGroup.remove(locationMap[x, y + 1, z])
+                locationMap[x, y + 1, z] = emptyBlock
+                gameBlockGroup.add(emptyBlock)
+                print("Block Destroyed")
+                return True
+            else:
+                print("No blocks to destroy")
+                return False
+        elif (self.direction == "-y"): # looking down at -y
+            if (locationMap[x, y - 1, z].name != "empty"):
+                emptyBlock = BlockObject("empty")
+                gameBlockGroup.remove(locationMap[x, y - 1, z])
+                locationMap[x, y - 1, z] = emptyBlock
+                gameBlockGroup.add(emptyBlock)
+                print("Block Destroyed")
+                return True
+            else:
+                print("No blocks to destroy")
+                return False
+        elif (self.direction == "+x"): # looking down at +x
+            if (locationMap[x + 1, y, z].name != "empty"):
+                emptyBlock = BlockObject("empty")
+                gameBlockGroup.remove(locationMap[x + 1, y, z])
+                locationMap[x + 1, y, z] = emptyBlock
+                gameBlockGroup.add(emptyBlock)
+                print("Block Destroyed")
+                return True
+            else:
+                print("No blocks to destroy")
+                return False
+        elif (self.direction == "+y"): # looking down at -x
+            if (locationMap[x - 1, y, z].name != "empty"):
+                emptyBlock = BlockObject("empty")
+                gameBlockGroup.remove(locationMap[x - 1, y, z])
+                locationMap[x - 1, y, z] = emptyBlock
+                gameBlockGroup.add(emptyBlock)
+                print("No blocks to destroy")
+                return True
+            else:
+                print("Block NOT destroyed")
+                return False
+        
+
 
 class Minecraft(PygameGame):
     blockTex = None
@@ -321,6 +370,8 @@ class Minecraft(PygameGame):
             self.perspective = 1
         elif (keyCode == pygame.K_2):
             self.perspective = 2
+        elif (keyCode == pygame.K_d):
+            self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
 
     def keyReleased(self, keyCode, modifier):
         pass
