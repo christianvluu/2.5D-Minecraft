@@ -8,9 +8,7 @@ import random, math
 import numpy as np
 
 class WorldGenerator(object):
-    def __init__(self, worldMap, seed, sigma, gameDims=(24, 24)): # seed can be any combination of letter/numbers in string format
-        if (not isinstance(seed, str)):
-            raise Exception("Seed not appropriate")
+    def __init__(self, worldMap, seed, sigma, gameDims=(20, 20)): # seed can be any combination of letter/numbers in string format
         self.seed = seed
         self.sigma = sigma
         random.seed(self.seed) # setting the same seed
@@ -45,26 +43,36 @@ class WorldGenerator(object):
         # generate un-convolved matrix
         for x in range(0, gameDims[0] + 2):
             for y in range(0, gameDims[0] + 2):
-                worldMap[x, y] = random.randrange(0, 10, 1)
+                worldMap[x, y] = random.randrange(0, 15, 1)
         
-        # convolving matrix
-        newWorldMap = np.copy(worldMap)
+        # # convolving matrix
+        # newWorldMap = np.copy(worldMap)
+        # halfConvSize = convolutionMatrixSize[0]//2
+        # for x in range(halfConvSize, gameDims[0] - halfConvSize):
+        #     for y in range(halfConvSize, gameDims[1] - halfConvSize):
+        #         tempMatrix = np.zeros(convolutionMatrixSize, dtype=float) # small location of matrix extracted
+        #         for x1 in range(-halfConvSize, halfConvSize + 1):
+        #             for y1 in range(-halfConvSize, halfConvSize + 1):
+        #                 tempMatrix[x1 + halfConvSize, y1 + halfConvSize] = worldMap[x + x1, y + y1]
+        #         newWorldMap[x, y] = round(np.sum(np.multiply(tempMatrix, self.convolutionMatrix)))
+        
+        # convolving matrix ver.2
+        finalWorldMap =  np.zeros(gameDims, dtype=int)
         halfConvSize = convolutionMatrixSize[0]//2
-        for x in range(halfConvSize, gameDims[0] - halfConvSize):
-            for y in range(halfConvSize, gameDims[1] - halfConvSize):
+        for x in range(1, gameDims[0] + 2 - 1):
+            for y in range(1, gameDims[1] + 2 - 1):
                 tempMatrix = np.zeros(convolutionMatrixSize, dtype=float) # small location of matrix extracted
                 for x1 in range(-halfConvSize, halfConvSize + 1):
                     for y1 in range(-halfConvSize, halfConvSize + 1):
                         tempMatrix[x1 + halfConvSize, y1 + halfConvSize] = worldMap[x + x1, y + y1]
-                newWorldMap[x, y] = math.floor(np.sum(np.multiply(tempMatrix, self.convolutionMatrix)))
+                finalWorldMap[x - 1, y - 1] = round(np.sum(np.multiply(tempMatrix, self.convolutionMatrix)))
         
-        # cut out only the usable newWorldMap
-        finalWorldMap =  np.zeros(gameDims, dtype=int)
-        for x in range(1, gameDims[0] + 1):
-            for y in range(1, gameDims[1] + 1):
-                finalWorldMap[x-1, y-1] = newWorldMap[x, y]
-        print(newWorldMap)
+        # # cut out only the usable newWorldMap
+        # finalWorldMap =  np.zeros(gameDims, dtype=int)
+        # for x in range(1, gameDims[0] - 1):
+        #     for y in range(1, gameDims[1] - 1):
+        #         finalWorldMap[x - 1, y - 1] = newWorldMap[x, y]
         print(finalWorldMap)
         return finalWorldMap
     
-test = WorldGenerator(0, "casey is dumb!", 0.85)
+test = WorldGenerator(0, 123, 0.85)
