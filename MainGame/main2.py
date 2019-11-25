@@ -3,6 +3,7 @@ import numpy as np
 # Pygame usage from http://blog.lukasperaza.com/getting-started-with-pygame/
 # and Official Documentation https://www.pygame.org/docs/ 
 from pygametemplate import *
+from WorldGenerator import *
 
 class BlockObject(pygame.sprite.Sprite):
     def __init__(self, name): # -1 is empty block
@@ -163,7 +164,7 @@ class Minecraft(PygameGame):
     blockLib = None
     blockXWidth = None
 
-    def __init__(self):
+    def __init__(self, seed, sigma):
         super().__init__(title="Minecraft")
         self.locationMap = np.full((200, 200, 200), BlockObject("empty"))
         # use self.location[x,y,z] to refer to a point
@@ -178,11 +179,13 @@ class Minecraft(PygameGame):
         self.initBlockLibrary()  # group textures
         self.perspective = 1 # default perspective, with origin up top
         self.createFlatWorld(
-            xSize=self.gameDims[0],
-            ySize=self.gameDims[1],
-            zSize=self.gameDims[2])
+            self.locationMap,
+            self.gameBlockGroup,
+            self.gameDims)
+        self.seed = seed
+        self.sigma = sigma
+        self.createRandomWorld(self.locationMap, self.gameBlockGroup, self.gameDims, self.seed, self.sigma)
         self.player = Player((self.gameDims[0]//2, self.gameDims[1]//2, self.gameDims[2]//2 + 1)) # player pos is above the block player is standing on
-    
     def initBlockLibrary(self):
         Minecraft.blockLib = {
         # textures purchased from
@@ -222,7 +225,32 @@ class Minecraft(PygameGame):
         newSurf = pygame.transform.scale(surf, newDims)
         return newSurf
 
-    def createFlatWorld(self, xSize=200, ySize=200, zSize=200):
+    def createRandomWorld(self, locationMap, gameBlockGroup, gameDims, seed, sigma):
+        worldGen = WorldGenerator(seed, (gameDims[0], gameDims[1]), sigma) # only xDim and yDim needed
+        heightMap = worldGen.generateRandomMap()
+        xSize = gameDims[0]
+        ySize = gameDims[1]
+        zSize = gameDims[2]
+        for x in range(0, xSize):
+            for y in range(0, ySize):
+                newBlock = BlockObject("grassDirt")
+                z = heightMap[x, y] + gameDims[2]//2 # shifting the zero coordinate up to the center of the map
+                locationMap[x, y, z] = newBlock
+                gameBlockGroup.add(newBlock)
+                for lowerZ in range(0, z - 4):
+                    newBlock = BlockObject("dirt")
+                    locationMap[x, y, lowerZ] = newBlock
+                    gameBlockGroup.add(newBlock)
+                for lowerZ in range(z - 4, z):
+                    newBlock = BlockObject("stone")
+                    locationMap[x, y, lowerZ] = newBlock
+                    gameBlockGroup.add(newBlock)
+
+
+    def createFlatWorld(self, locationMap, gameBlockGroup, gameDims = (200, 200, 200)):
+        xSize = gameDims[0]
+        ySize = gameDims[1]
+        zSize = gameDims[2]
         self.screen.blit(self.background, (0, 0))
         # world center is at xSize//2, ySize//2, zSize//2
         dirtThickness = 2  # goes from center down
@@ -230,18 +258,18 @@ class Minecraft(PygameGame):
         for x in range(0, xSize):
             for y in range(0, ySize):
                 newBlock = BlockObject("grassDirt")
-                self.locationMap[x, y, zSize//2] = newBlock
-                self.gameBlockGroup.add(newBlock)
+                locationMap[x, y, zSize//2] = newBlock
+                gameBlockGroup.add(newBlock)
                 for z in range(zSize//2 - dirtThickness, zSize//2):
                     newBlock = BlockObject("dirt")
-                    self.locationMap[x, y, z] = newBlock
-                    self.gameBlockGroup.add(newBlock)
+                    locationMap[x, y, z] = newBlock
+                    gameBlockGroup.add(newBlock)
                 for z in range(zSize//2 - dirtThickness - stoneThickness, zSize//2 - dirtThickness):
                     newBlock = BlockObject("sand")
-                    self.locationMap[x, y, z] = newBlock
-                    self.gameBlockGroup.add(newBlock)
+                    locationMap[x, y, z] = newBlock
+                    gameBlockGroup.add(newBlock)
         
-         # for debugging
+        # blocks created for orientation at start
         for x in range(xSize//2 - 2, xSize//2 + 3, 2):
             for y in range(ySize//2 - 2, xSize//2 + 3, 2):
                 self.gameBlockGroup.remove(BlockObject("grassDirt"))
@@ -382,6 +410,6 @@ class Minecraft(PygameGame):
     def redrawAll(self, screen):
         self.drawWorld(screen, self.player.getPos(), self.perspective)
     
-game = Minecraft()
+game = Minecraft(123, 0.85) # input is seed and sigma
         
 game.run()
