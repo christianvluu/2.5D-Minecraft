@@ -309,6 +309,8 @@ class Minecraft(PygameGame):
             for x in range(posX - self.renderDist, posX + self.renderDist + 1):
                 for y in range(posY + self.renderDist, posY - self.renderDist - 1, -1):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist):
+                        if (x <= posX and y >= posY):
+                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos, perspective)
     
@@ -327,7 +329,7 @@ class Minecraft(PygameGame):
             drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
             drawY = ((x - posX) + (y - posY))*Minecraft.blockXWidth/(2*2) + self.height/2 - Minecraft.blockXWidth/(2*2) - (z - posZ)*Minecraft.blockXWidth/2
         elif (perspective == 2): # rotated map 90 degrees top down view
-            drawX = ((x - posX) - (posY - y))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
+            drawX = ((posX - x) + (posY - y))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
             drawY = ((x - posX) + (posY - y))*Minecraft.blockXWidth/(2*2) + self.height/2 - Minecraft.blockXWidth/(2*2) - (z - posZ)*Minecraft.blockXWidth/2
         self.screen.blit(blockSurface, (drawX, drawY))
         if (posX == x and posY == y): #this is the column of blocks player is standing on
