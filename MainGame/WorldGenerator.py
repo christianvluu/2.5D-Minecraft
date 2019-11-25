@@ -13,7 +13,7 @@ import random, math
 import numpy as np
 
 class WorldGenerator(object):
-    def __init__(self, seed, gameDims=(200, 200), sigma=0.85): # seed can be any combination of letter/numbers in string format
+    def __init__(self, seed, gameDims=(200, 200), sigma=0.85): # seed can be any combination of letter/numbers in any format
         self.seed = seed
         self.sigma = sigma
         self.gameDims = gameDims

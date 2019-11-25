@@ -23,11 +23,21 @@ class Player(pygame.sprite.Sprite):
         self.gameZ = gameCoords[2]
         self.direction = "+y"  # facing down to bottom left at first
         # steve image from https://minecraft.gamepedia.com/File:Steve.png
-        self.surfPlusY = Minecraft.scale(pygame.image.load("isotex/steve1.png"), Minecraft.blockXWidth)
+        self.surfPlusY = Player.scale(pygame.image.load("isotex/steve1.png"))
         # self.surfDownLeft = pygame.image.load("playerdownleft.png")
         # self.surfDownRight = pygame.image.load("playerdownright.png")
         # self.surfUpLeft = pygame.image.load("playerupleft.png")
         # self.surfUpRight = pygame.image.load("playerupright.png")
+    
+    @staticmethod
+    def scale(surf):
+        (xSize, ySize) = surf.get_size()
+        factor = Minecraft.blockXWidth/xSize
+        newXDim = Minecraft.blockXWidth
+        newYDim = int(ySize*factor)
+        scaleToDimsNew = (newXDim, newYDim)
+        newSurf = Minecraft.scale(surf, scaleToDimsNew)
+        return newSurf
     
     def move(self, dx, dy, dz, locationMap):
         # keep track of where the player is facing (helpful for placing and
@@ -85,8 +95,8 @@ class Player(pygame.sprite.Sprite):
             if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"):
                 return (x, y, z)
             else: return False
-        elif (self.direction == "-y"): # facing opposite z direction
-            (x, y, z) = (self.gameX, self.gameY - 1, self.gameZ)
+        elif (self.direction == "-x"): # facing opposite z direction
+            (x, y, z) = (self.gameX - 1, self.gameY, self.gameZ)
             if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"):
                 return (x, y, z)
             else: return False
@@ -145,7 +155,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 print("No blocks to destroy")
                 return False
-        elif (self.direction == "+y"): # looking down at -x
+        elif (self.direction == "-x"): # looking down at -x
             if (locationMap[x - 1, y, z].name != "empty"):
                 emptyBlock = BlockObject("empty")
                 gameBlockGroup.remove(locationMap[x - 1, y, z])
@@ -157,6 +167,12 @@ class Player(pygame.sprite.Sprite):
                 print("Block NOT destroyed")
                 return False
         
+    def draw(self, screen, surf, gameWidth, gameHeight):
+        drawX = gameWidth/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
+        (xSurfSize, ySurfSize) = surf.get_size()
+        yRealisticShift = Minecraft.blockXWidth/(2*2) # shift a bit to make steve look like he's on the block
+        drawY = gameHeight/2 - ySurfSize + yRealisticShift
+        screen.blit(self.surfPlusY, (drawX, drawY))
 
 
 class Minecraft(PygameGame):
@@ -165,7 +181,9 @@ class Minecraft(PygameGame):
     blockXWidth = None
 
     def __init__(self, seed, sigma):
-        super().__init__(title="Minecraft")
+        self.height = 550
+        self.width = 550
+        super().__init__(title="Minecraft", width=self.width, height=self.height)
         self.locationMap = np.full((200, 200, 200), BlockObject("empty"))
         # use self.location[x,y,z] to refer to a point
         self.gameDims = (200, 200, 200)
@@ -178,51 +196,49 @@ class Minecraft(PygameGame):
         self.gameBlockGroup = pygame.sprite.Group()
         self.initBlockLibrary()  # group textures
         self.perspective = 1 # default perspective, with origin up top
-        self.createFlatWorld(
-            self.locationMap,
-            self.gameBlockGroup,
-            self.gameDims)
+        self.createFlatWorld(self.locationMap, self.gameBlockGroup, self.gameDims)
         self.seed = seed
         self.sigma = sigma
         self.createRandomWorld(self.locationMap, self.gameBlockGroup, self.gameDims, self.seed, self.sigma)
         self.player = Player((self.gameDims[0]//2, self.gameDims[1]//2, self.gameDims[2]//2 + 1)) # player pos is above the block player is standing on
+
     def initBlockLibrary(self):
+        scaleToDims = (Minecraft.blockXWidth, Minecraft.blockXWidth)
         Minecraft.blockLib = {
         # textures purchased from
         # https://www.yandidesigns.com/2017/07/how-to-make-flat-isometric-block-like-minecraft-affinity-designer.html
             "dirt":
-                Minecraft.scale(pygame.image.load("isotex/dirt.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/dirt.png"), scaleToDims),
             "interiorStone":
-                Minecraft.scale(pygame.image.load("isotex/interiorstone.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/interiorstone.png"), scaleToDims),
             "grassDirt":
-                Minecraft.scale(pygame.image.load("isotex/grassdirt.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/grassdirt.png"), scaleToDims),
             "grass":
-                Minecraft.scale(pygame.image.load("isotex/grass.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/grass.png"), scaleToDims),
             "snow":
-                Minecraft.scale(pygame.image.load("isotex/snow.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/snow.png"), scaleToDims),
             "sand":
-                Minecraft.scale(pygame.image.load("isotex/sand.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/sand.png"), scaleToDims),
             "stone":
-                Minecraft.scale(pygame.image.load("isotex/stone.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/stone.png"), scaleToDims),
             "sandStone":
-                Minecraft.scale(pygame.image.load("isotex/sandstone.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/sandstone.png"), scaleToDims),
             "stoneDirt":
-                Minecraft.scale(pygame.image.load("isotex/stonedirt.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/stonedirt.png"), scaleToDims),
             "stoneSnow":
-                Minecraft.scale(pygame.image.load("isotex/stonesnow.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/stonesnow.png"), scaleToDims),
             "dirtSand":
-                Minecraft.scale(pygame.image.load("isotex/dirtsand.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/dirtsand.png"), scaleToDims),
             "dirtRock":
-                Minecraft.scale(pygame.image.load("isotex/dirtrock.png"), Minecraft.blockXWidth),
+                Minecraft.scale(pygame.image.load("isotex/dirtrock.png"), scaleToDims),
             "grassStone":
-                Minecraft.scale(pygame.image.load("isotex/grassstone.png"), Minecraft.blockXWidth)
+                Minecraft.scale(pygame.image.load("isotex/grassstone.png"), scaleToDims)
         }
     
     @staticmethod
     def scale(surf, scaleToDims):
         # scales surface to correct dimensions for drawing
-        newDims = (scaleToDims, scaleToDims)  # for resizing image
-        newSurf = pygame.transform.scale(surf, newDims)
+        newSurf = pygame.transform.scale(surf, scaleToDims)
         return newSurf
 
     def createRandomWorld(self, locationMap, gameBlockGroup, gameDims, seed, sigma):
@@ -237,15 +253,14 @@ class Minecraft(PygameGame):
                 z = heightMap[x, y] + gameDims[2]//2 # shifting the zero coordinate up to the center of the map
                 locationMap[x, y, z] = newBlock
                 gameBlockGroup.add(newBlock)
-                for lowerZ in range(0, z - 4):
+                for lowerZ in range(z - 4, z):
                     newBlock = BlockObject("dirt")
                     locationMap[x, y, lowerZ] = newBlock
                     gameBlockGroup.add(newBlock)
-                for lowerZ in range(z - 4, z):
+                for lowerZ in range(0, z - 4):
                     newBlock = BlockObject("stone")
                     locationMap[x, y, lowerZ] = newBlock
                     gameBlockGroup.add(newBlock)
-
 
     def createFlatWorld(self, locationMap, gameBlockGroup, gameDims = (200, 200, 200)):
         xSize = gameDims[0]
@@ -286,6 +301,8 @@ class Minecraft(PygameGame):
             for x in range(posX - self.renderDist, posX + self.renderDist):
                 for y in range(posY - self.renderDist, posY + self.renderDist):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist):
+                        if (x <= posX and y <= posY):
+                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos)
         elif (perspective == 2):
@@ -294,6 +311,30 @@ class Minecraft(PygameGame):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist):
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos)
+    
+    def drawBlock(self, screen, block, centerPos, playerPos):
+        posX = playerPos[0]
+        posY = playerPos[1]
+        posZ = playerPos[2] - 1  # player pos is above the block player is standing on so need to -1 to draw
+        x = centerPos[0]
+        y = centerPos[1]
+        z = centerPos[2]
+        if (block.name == "empty"):
+            return 0
+        blockSurface = Minecraft.blockLib[block.name]
+        #drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + self.margin - Minecraft.blockXWidth
+        drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
+        drawY = ((x - posX) + (y - posY))*Minecraft.blockXWidth/(2*2) + self.height/2 - Minecraft.blockXWidth/(2*2) - (z - posZ)*Minecraft.blockXWidth/2
+        self.screen.blit(blockSurface, (drawX, drawY))
+        if (posX == x and posY == y): #this is the column of blocks player is standing on
+            darkBlockSurface = blockSurface.copy()
+# method of darkening images from here https://www.reddit.com/r/pygame/comments/4b8mnz/is_it_possible_to_make_an_image_darker/
+            dark = pygame.Surface(blockSurface.get_size()).convert_alpha()
+            dark.fill((0,0,0, 255//2))
+            darkBlockSurface.blit(dark, (0,0))
+            self.screen.blit(darkBlockSurface, (drawX, drawY))
+        pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
+        pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
 
 # Isometric drawing VERY HEAVILY adapted from http://clintbellanger.net/articles/isometric_math/
     def drawBlockColors(self, screen, blockObj, centerPos, playerPos):
@@ -350,23 +391,6 @@ class Minecraft(PygameGame):
         posRightSurface = [(x0Right, y0Right), (x1Right, y1Right), (x2Right, y2Right), (x3Right, y3Right)]
         pygame.draw.polygon(screen, (255, 0, 0), posRightSurface)
 
-    def drawBlock(self, screen, block, centerPos, playerPos):
-        posX = playerPos[0]
-        posY = playerPos[1]
-        posZ = playerPos[2] - 1  # player pos is above the block player is standing on so need to -1 to draw
-        x = centerPos[0]
-        y = centerPos[1]
-        z = centerPos[2]
-        if (block.name == "empty"):
-            return 0
-        blockSurface = Minecraft.blockLib[block.name]
-        #drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + self.margin - Minecraft.blockXWidth
-        drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
-        drawY = ((x - posX) + (y - posY))*Minecraft.blockXWidth/(2*2) + self.height/2 - Minecraft.blockXWidth/(2*2) - (z - posZ)*Minecraft.blockXWidth/2
-        self.screen.blit(blockSurface, (drawX, drawY))
-        pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
-        pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
-
     def mousePressed(self, x, y):
         pass
 
@@ -410,6 +434,6 @@ class Minecraft(PygameGame):
     def redrawAll(self, screen):
         self.drawWorld(screen, self.player.getPos(), self.perspective)
     
-game = Minecraft(123, 0.85) # input is seed and sigma
+game = Minecraft(123, 1) # input is seed and sigma
         
 game.run()
