@@ -3,7 +3,30 @@ import numpy as np
 import time
 import random
 
-temp1 = np.array([[1., 2, 3], [4, 5, 6], [7, 8, 9]])
-temp2 = np.array([[10, 20, 30], [40, 50, 60], [70, 80, 90]])
-print(np.multiply(temp1, temp2))
-print(np.sum(np.multiply(temp1, temp2)))
+
+# Generate some test data
+data = np.arange(200).reshape((4,5,10))
+print(data)
+
+# Write the array to disk
+# outfile = open('test.txt', 'w')
+# I'm writing a header here just for the sake of readability
+# # Any line starting with "#" will be ignored by numpy.loadtxt
+# outfile.write('# Array shape: {0}\n'.format(data.shape))
+
+# # Iterating through a ndimensional array produces slices along
+# # the last axis. This is equivalent to data[i,:,:] in this case
+# for data_slice in data:
+
+#     # The formatting string indicates that I'm writing out
+#     # the values in left-justified columns 7 characters in width
+#     # with 2 decimal places.  
+#     np.savetxt(outfile, data_slice, fmt='%-7.2f')
+
+#     # Writing out a break to indicate different slices...
+#     outfile.write('# New slice\n')
+
+
+new_data = np.loadtxt('test.txt')
+new_data = new_data.reshape((4,5,10))
+print(new_data)

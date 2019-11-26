@@ -44,6 +44,9 @@ class Minecraft(PygameGame):
     def startGameFlatlandWorld(self):
         self.createFlatWorld(self.locationMap, self.gameBlockGroup, self.gameDims)
         self.player.move(0, 0, 0, self.locationMap) # init the player drop down to world
+    
+    def startGame(self):
+        pass
 
     def startScreen(self):
         self.startScreenElements = pygame.sprite.Group()
@@ -55,10 +58,13 @@ class Minecraft(PygameGame):
         buttonDims = (120, 30)
         randomWorldPos = (self.width/2 - 130, self.height/2)
         flatlandWorldPos = (self.width/2 + 10, self.height/2)
+        openWorldPos = (self.width/2 - 60, self.height/2 + 40)
         self.randomWorldButton = Button("randomworldbutton.png", buttonDims, randomWorldPos)
         self.startScreenElements.add(self.randomWorldButton)
         self.flatlandWorldButton = Button("flatlandworldbutton.png", buttonDims, flatlandWorldPos)
         self.startScreenElements.add(self.flatlandWorldButton)
+        self.openWorldButton = Button("openworldbutton.png", buttonDims, openWorldPos)
+        self.startScreenElements.add(self.openWorldButton)
         self.startScreenElements.draw(self.screen)
         if (self.isPlaying):
             self.startGame() # start the game
@@ -72,6 +78,9 @@ class Minecraft(PygameGame):
             elif (collision == self.flatlandWorldButton):
                 self.isPlaying = True
                 self.startGameFlatlandWorld()
+            elif (collision == self.openWorldButton):
+                self.isPlaying = True
+                self.openWorld("test.txt")
 
     def initBlockLibrary(self):
         scaleToDims = (Minecraft.blockXWidth, Minecraft.blockXWidth)
@@ -254,23 +263,35 @@ class Minecraft(PygameGame):
 
 # copied and adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
     def openWorld(self, filePath):
-        infile = open(filePath, "r")
+        print("loading file...")
         newArray = np.loadtxt(filePath).reshape(self.gameDims)
+        print("I've loaded file")
         for x in range(0, self.gameDims[0]):
             for y in range(0, self.gameDims[1]):
                 for z in range(0, self.gameDims[2]):
-                    if (newArray[x, y, z] == "empty"):
-                        self.locationMap[x, y, z] = BlockObject("empty")
-                    elif (newArray[x, y, z] == "dirt"):
-                        self.locationMap[x, y, z] = BlockObject("dirt")
-                    elif (newArray[x, y, z] == "grassDirt"):
-                        self.locationMap[x, y, z] = BlockObject("grassDirt")
-                    elif (newArray[x, y, z] == "stone"):
-                        self.locationMap[x, y, z] = BlockObject("stone")
-                    elif (newArray[x, y, z] == "sand"):
-                        self.locationMap[x, y, z] = BlockObject("sand")
-
-
+                    #print(newArray[x, y, z])
+                    if (newArray[x, y, z] == 0):
+                        #print("empty")
+                        newObject = BlockObject("empty")
+                        self.locationMap[x, y, z] = newObject
+                    elif (newArray[x, y, z] == 1):
+                        #print("dirt")
+                        newObject = BlockObject("dirt")
+                        self.locationMap[x, y, z] = newObject
+                    elif (newArray[x, y, z] == 2):
+                        #print("grassDirt")
+                        newObject = BlockObject("grassDirt")
+                        self.locationMap[x, y, z] = newObject
+                    elif (newArray[x, y, z] == 3):
+                        #print("stone")
+                        newObject = BlockObject("stone")
+                        self.locationMap[x, y, z] = newObject
+                    elif (newArray[x, y, z] == 4):
+                        #print("sand")
+                        newObject = BlockObject("sand")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+        print(self.locationMap[100, 100, 93])
 
     def mousePressed(self, x, y):
         if (not self.isPlaying):
@@ -436,7 +457,8 @@ class Minecraft(PygameGame):
     def redrawAll(self, screen):
         if (self.isPlaying):
             self.drawWorld(screen, self.player.getPos(), self.perspective)
-    
+        #print("Player Pos: ", (self.player.gameX, self.player.gameY, self.player.gameZ))
+
 game = Minecraft(123, 1) # input is seed and sigma
         
 game.run()
