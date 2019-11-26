@@ -1,196 +1,14 @@
 import pygame, time
 import numpy as np
+import json
 # Pygame usage from http://blog.lukasperaza.com/getting-started-with-pygame/
 # and Official Documentation https://www.pygame.org/docs/ 
 from pygametemplate import *
 from WorldGenerator import *
-
-class BlockObject(pygame.sprite.Sprite):
-    def __init__(self, name): # -1 is empty block
-        super().__init__()
-        self.name = name  # string - use keys of Minecraft.blockLib
-        # location of block is stored in locationMap
-        # self.gameX = gameCoords[0]  # int
-        # self.gameY = gameCoords[1]
-        # self.gameZ = gameCoords[2]
-
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, gameCoords=(100, 100, 100)):
-        super().__init__()
-        self.gameX = gameCoords[0]  # integer
-        self.gameY = gameCoords[1]
-        self.gameZ = gameCoords[2]
-        self.direction = "+y"  # facing down to bottom left at first
-        # steve image from https://minecraft.gamepedia.com/File:Steve.png
-        self.surfPlusY = Player.scale(pygame.image.load("isotex/steve1.png"))
-        # self.surfDownLeft = pygame.image.load("playerdownleft.png")
-        # self.surfDownRight = pygame.image.load("playerdownright.png")
-        # self.surfUpLeft = pygame.image.load("playerupleft.png")
-        # self.surfUpRight = pygame.image.load("playerupright.png")
-    
-    @staticmethod
-    def scale(surf):
-        (xSize, ySize) = surf.get_size()
-        factor = Minecraft.blockXWidth/xSize
-        newXDim = Minecraft.blockXWidth
-        newYDim = int(ySize*factor)
-        scaleToDimsNew = (newXDim, newYDim)
-        newSurf = Minecraft.scale(surf, scaleToDimsNew)
-        return newSurf
-    
-    def move(self, dx, dy, dz, locationMap):
-        # keep track of where the player is facing (helpful for placing and
-        # destroying blocks) Also useful for movement also
-        if (dy > 0):
-            self.direction = "+y"
-        elif (dy < 0):
-            self.direction = "-y"
-        elif (dx > 0):
-            self.direction = "+x"
-        elif (dx < 0):
-            self.direction = "-x"
-        if (self.getLegalPlayerPos(dx, dy, dz, locationMap) == False):
-            print("Cannot move to:", (self.gameX + dx, self.gameY + dy, self.gameZ + dz), "Current Pos:", (self.gameX, self.gameY, self.gameZ))
-            return False # cannot move
-        else:
-            (x, y, z) = self.getLegalPlayerPos(dx, dy, dz, locationMap)
-            self.gameX = x
-            self.gameY = y
-            self.gameZ = z
-            print("Moved to:", (x, y, z), "/ Dir:", self.direction)
-        
-            return True
-        # direction dz doesn't matter
-        # probably should do bounds checking here also
-    
-    def getPos(self):
-        return (self.gameX, self.gameY, self.gameZ)
-    
-    def placeBlock(self, block, locationMap, gameBlockGroup, zOffset):
-        if (self.getPlaceBlockLocation(locationMap, zOffset) == False):
-            print("Block not placed")
-            return False # block not placed
-        else:
-            (x, y, z) = self.getPlaceBlockLocation(locationMap, zOffset) # get locations at which block is to be placed
-            locationMap[x, y, z] = block
-            gameBlockGroup.add(block)
-            print("Block placed at: ", (x, y, z))
-            return True  # block successfully placed
-    
-    def getPlaceBlockLocation(self, locationMap, zOffset):  # gets location at which block has to be placed
-        if (self.direction == "+y"): # facing down the y direction
-            (x, y, z) = (self.gameX, self.gameY + 1, self.gameZ + zOffset)  # coords being considered; block to be placed is at same level as player
-            # player pos is inside the block itself so we need to shift up
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"): # check legal block placement
-                return (x, y, z)
-            else: return False # false is when cannot place block
-        elif (self.direction == "-y"): # facing opposite y direction
-            (x, y, z) = (self.gameX, self.gameY - 1, self.gameZ + zOffset)
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"):
-                return (x, y, z)
-            else: return False
-        elif (self.direction == "+x"): # facing down the x direction
-            (x, y, z) = (self.gameX + 1, self.gameY, self.gameZ + zOffset)
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"):
-                return (x, y, z)
-            else: return False
-        elif (self.direction == "-x"): # facing opposite z direction
-            (x, y, z) = (self.gameX - 1, self.gameY, self.gameZ + zOffset)
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z - 1].name != "empty"):
-                return (x, y, z)
-            else: return False
-        else:
-            raise Exception("Block location/name not found")
-    
-    def getLegalPlayerPos(self, dx, dy, dz, locationMap):  # gets location at which block has to be placed
-        if (dx != 0): # move in x
-            (x, y, z) = (self.gameX + dx, self.gameY, self.gameZ) # that player about to move to
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z + 1].name == "empty"): # player takes up two z-blocks
-                return (x, y, z)
-            else: return False
-        elif (dy != 0): # move in y
-            (x, y, z) = (self.gameX, self.gameY + dy, self.gameZ) # that player about to move to
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z + 1].name == "empty"): # player takes up two z-blocks
-                return (x, y, z)
-            else: return False
-        elif (dz != 0): # move in z
-            (x, y, z) = (self.gameX, self.gameY , self.gameZ + dz) # that player about to move to
-            if (locationMap[x, y, z].name == "empty" and locationMap[x, y, z + 1].name == "empty"): # player takes up two z-blocks
-                return (x, y, z)
-            else: return False
-    
-    def destroyBlock(self, locationMap, gameBlockGroup):
-        (x, y, z) = (self.gameX, self.gameY, self.gameZ)
-        if (self.direction == "+y"): # looking down at +y
-            if (locationMap[x, y + 1, z].name != "empty"):
-                emptyBlock = BlockObject("empty")
-                gameBlockGroup.remove(locationMap[x, y + 1, z])
-                locationMap[x, y + 1, z] = emptyBlock
-                gameBlockGroup.add(emptyBlock)
-                print("Block Destroyed")
-                return True
-            else:
-                print("No blocks to destroy")
-                return False
-        elif (self.direction == "-y"): # looking down at -y
-            if (locationMap[x, y - 1, z].name != "empty"):
-                emptyBlock = BlockObject("empty")
-                gameBlockGroup.remove(locationMap[x, y - 1, z])
-                locationMap[x, y - 1, z] = emptyBlock
-                gameBlockGroup.add(emptyBlock)
-                print("Block Destroyed")
-                return True
-            else:
-                print("No blocks to destroy")
-                return False
-        elif (self.direction == "+x"): # looking down at +x
-            if (locationMap[x + 1, y, z].name != "empty"):
-                emptyBlock = BlockObject("empty")
-                gameBlockGroup.remove(locationMap[x + 1, y, z])
-                locationMap[x + 1, y, z] = emptyBlock
-                gameBlockGroup.add(emptyBlock)
-                print("Block Destroyed")
-                return True
-            else:
-                print("No blocks to destroy")
-                return False
-        elif (self.direction == "-x"): # looking down at -x
-            if (locationMap[x - 1, y, z].name != "empty"):
-                emptyBlock = BlockObject("empty")
-                gameBlockGroup.remove(locationMap[x - 1, y, z])
-                locationMap[x - 1, y, z] = emptyBlock
-                gameBlockGroup.add(emptyBlock)
-                print("No blocks to destroy")
-                return True
-            else:
-                print("Block NOT destroyed")
-                return False
-        
-    def draw(self, screen, surf, gameWidth, gameHeight):
-        drawX = gameWidth/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
-        (xSurfSize, ySurfSize) = surf.get_size()
-        yRealisticShift = Minecraft.blockXWidth/(2*2) # shift a bit to make steve look like he's on the block
-        drawY = gameHeight/2 - ySurfSize + yRealisticShift
-        screen.blit(self.surfPlusY, (drawX, drawY))
-
-
-class Button(pygame.sprite.Sprite):
-    def __init__(self, imageLoc, buttonDims, pos): # x and y is position on screen
-        super().__init__()
-        self.image = pygame.transform.scale(pygame.image.load(imageLoc), buttonDims)
-        self.rect = self.image.get_rect()
-        # declaring variables for sprites: http://programarcadegames.com/index.php?chapter=introduction_to_sprites
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
-
-class MouseCursor(pygame.sprite.Sprite):
-    def __init__(self, pos):
-        super().__init__()
-        self.image = pygame.Surface((0, 0))
-        self.rect = self.image.get_rect()
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
+from BlockObject import *
+from PlayerObject import *
+from MouseCursorObject import *
+from ButtonObject import *
 
 class Minecraft(PygameGame):
     blockTex = None
@@ -215,14 +33,16 @@ class Minecraft(PygameGame):
         self.perspective = 1 # default perspective, with origin up top
         self.seed = seed
         self.sigma = sigma
-        self.player = Player((self.gameDims[0]//2, self.gameDims[1]//2, self.gameDims[2]//2 + 1)) # player pos is above the block player is standing on
+        self.player = Player(Minecraft.blockXWidth, (self.gameDims[0]//2, self.gameDims[1]//2, self.gameDims[2]//2 + 1)) # player pos is above the block player is standing on
         self.startScreen() # display the startscreen
     
     def startGameRandomWorld(self):
         self.createRandomWorld(self.locationMap, self.gameBlockGroup, self.gameDims, self.seed, self.sigma)
+        self.player.move(0, 0, 0, self.locationMap) # init the player drop down to world
     
     def startGameFlatlandWorld(self):
         self.createFlatWorld(self.locationMap, self.gameBlockGroup, self.gameDims)
+        self.player.move(0, 0, 0, self.locationMap) # init the player drop down to world
 
     def startScreen(self):
         self.startScreenElements = pygame.sprite.Group()
@@ -352,7 +172,7 @@ class Minecraft(PygameGame):
                 for y in range(posY - self.renderDist, posY + self.renderDist + 1):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist + 1):
                         if (x <= posX and y <= posY):
-                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height)
+                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height, Minecraft.blockXWidth)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos, perspective)
         elif (perspective == 2):
@@ -360,7 +180,7 @@ class Minecraft(PygameGame):
                 for y in range(posY + self.renderDist, posY - self.renderDist - 1, -1):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist):
                         if (x <= posX and y >= posY):
-                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height)
+                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height, Minecraft.blockXWidth)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos, perspective)
     
@@ -495,9 +315,9 @@ class Minecraft(PygameGame):
                 self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
             elif (keyCode == pygame.K_DOWN and modifier == 64):
                 if (self.perspective == 1):
-                    self.player.direction = "-y"
+                    self.player.direction = "+x"
                 elif (self.perspective == 2):
-                    self.player.direction = "-x"
+                    self.player.direction = "-y"
                 self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
             elif (keyCode == pygame.K_RIGHT and modifier == 64):
                 if (self.perspective == 1):
