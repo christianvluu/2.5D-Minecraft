@@ -1,6 +1,7 @@
 import pygame, time
 import numpy as np
 import json
+import os
 # Pygame usage from http://blog.lukasperaza.com/getting-started-with-pygame/
 # and Official Documentation https://www.pygame.org/docs/ 
 from pygametemplate import *
@@ -102,7 +103,8 @@ class Minecraft(PygameGame):
             "dirtRock":
                 Minecraft.scale(pygame.image.load("isotex/dirtrock.png"), scaleToDims),
             "grassStone":
-                Minecraft.scale(pygame.image.load("isotex/grassstone.png"), scaleToDims)
+                Minecraft.scale(pygame.image.load("isotex/grassstone.png"), scaleToDims),
+            "empty": "NOTHING"
         }
     
     @staticmethod
@@ -213,6 +215,63 @@ class Minecraft(PygameGame):
         pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
         pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
 
+# copied and adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
+    def saveWorld(self):
+        newArray = np.full((200, 200, 200), -1)
+        for x in range(0, self.gameDims[0]):
+            for y in range(0, self.gameDims[1]):
+                for z in range(0, self.gameDims[2]):
+                    if (self.locationMap[x, y, z].name == "empty"):
+                        newArray[x, y, z] = 0
+                    elif (self.locationMap[x, y, z].name == "dirt"):
+                        newArray[x, y, z] = 1
+                    elif (self.locationMap[x, y, z].name == "grassDirt"):
+                        newArray[x, y, z] = 2
+                    elif (self.locationMap[x, y, z].name == "stone"):
+                        newArray[x, y, z] = 3
+                    elif (self.locationMap[x, y,z].name == "sand"):
+                        newArray[x, y, z] = 4
+                    # for key, value in Minecraft.blockLib:
+                    #     if (key == self.locationMap[x, y, z].name):
+                    #         nameArray[x, y, z] = 
+        
+        outfile = open("test.txt", "w")
+            # I'm writing a header here just for the sake of readability
+            # Any line starting with "#" will be ignored by numpy.loadtxt
+        outfile.write("# World shape: {0}\n".format(newArray.shape))
+
+        # Iterating through a ndimensional array produces slices along
+        # the last axis. This is equivalent to data[i,:,:] in this case
+        for data_slice in newArray:
+
+            # The formatting string indicates that I'm writing out
+            # the values in left-justified columns 7 characters in width
+            # with 2 decimal places.  
+            np.savetxt(outfile, data_slice, fmt="%d")
+
+            # Writing out a break to indicate different slices...
+            outfile.write('# New slice\n')
+
+# copied and adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
+    def openWorld(self, filePath):
+        infile = open(filePath, "r")
+        newArray = np.loadtxt(filePath).reshape(self.gameDims)
+        for x in range(0, self.gameDims[0]):
+            for y in range(0, self.gameDims[1]):
+                for z in range(0, self.gameDims[2]):
+                    if (newArray[x, y, z] == "empty"):
+                        self.locationMap[x, y, z] = BlockObject("empty")
+                    elif (newArray[x, y, z] == "dirt"):
+                        self.locationMap[x, y, z] = BlockObject("dirt")
+                    elif (newArray[x, y, z] == "grassDirt"):
+                        self.locationMap[x, y, z] = BlockObject("grassDirt")
+                    elif (newArray[x, y, z] == "stone"):
+                        self.locationMap[x, y, z] = BlockObject("stone")
+                    elif (newArray[x, y, z] == "sand"):
+                        self.locationMap[x, y, z] = BlockObject("sand")
+
+
+
     def mousePressed(self, x, y):
         if (not self.isPlaying):
             self.mouseCursor.rect.x = x
@@ -260,25 +319,50 @@ class Minecraft(PygameGame):
                     self.player.direction = "-x"
                 elif (self.perspective == 2):
                     self.player.direction = "+y"
-                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 0) # 0 is zOffset
             elif (keyCode == pygame.K_DOWN and modifier == 1):
                 if (self.perspective == 1):
                     self.player.direction = "+x"
                 elif (self.perspective == 2):
                     self.player.direction = "-y"
-                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 0)
             elif (keyCode == pygame.K_RIGHT and modifier == 1):
                 if (self.perspective == 1):
                     self.player.direction = "-y"
                 elif (self.perspective == 2):
                     self.player.direction = "-x"
-                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 0)
             elif (keyCode == pygame.K_LEFT and modifier == 1):
                 if (self.perspective == 1):
                     self.player.direction = "+y"
                 elif (self.perspective == 2):
                     self.player.direction = "+x"
-                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 0)
+            
+            elif (keyCode == pygame.K_UP and modifier == 256): # 256 is left alt
+                if (self.perspective == 1):
+                    self.player.direction = "-x"
+                elif (self.perspective == 2):
+                    self.player.direction = "+y"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_DOWN and modifier == 256):
+                if (self.perspective == 1):
+                    self.player.direction = "+x"
+                elif (self.perspective == 2):
+                    self.player.direction = "-y"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_RIGHT and modifier == 256):
+                if (self.perspective == 1):
+                    self.player.direction = "-y"
+                elif (self.perspective == 2):
+                    self.player.direction = "-x"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_LEFT and modifier == 256):
+                if (self.perspective == 1):
+                    self.player.direction = "+y"
+                elif (self.perspective == 2):
+                    self.player.direction = "+x"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup, 1)
             
             # use arrow keys to place block, if NOT holding left control, place block at feet level
             elif (keyCode == pygame.K_UP and modifier == 0): # 0 is no modifier
@@ -331,6 +415,12 @@ class Minecraft(PygameGame):
                 elif (self.perspective == 2):
                     self.player.direction = "+x"
                 self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+            
+            elif (keyCode == pygame.K_r and modifier == 64): # reset game by CTRL + r
+                self.__init__(self.seed, self.sigma)
+            
+            elif (keyCode == pygame.K_s and modifier == 64): # save game by CTRL + s
+                self.saveWorld()
             
             elif (keyCode == pygame.K_1):
                 self.perspective = 1

@@ -126,8 +126,8 @@ class Player(pygame.sprite.Sprite):
         return (x, y, tempZ + 1)
 
     
-    def destroyBlock(self, locationMap, gameBlockGroup):
-        (x, y, z) = (self.gameX, self.gameY, self.gameZ)
+    def destroyBlock(self, locationMap, gameBlockGroup, zOffset):
+        (x, y, z) = (self.gameX, self.gameY, self.gameZ + zOffset)
         if (self.direction == "+y"): # looking down at +y
             if (locationMap[x, y + 1, z].name != "empty"):
                 emptyBlock = BlockObject("empty")
