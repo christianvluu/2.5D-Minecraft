@@ -46,7 +46,7 @@ class Minecraft(PygameGame):
         self.player.move(0, 0, 0, self.locationMap) # init the player drop down to world
     
     def startGame(self):
-        pass
+        self.player.move(0, 0, 0, self.locationMap) # init the player drop down to world
 
     def startScreen(self):
         self.startScreenElements = pygame.sprite.Group()
@@ -224,7 +224,7 @@ class Minecraft(PygameGame):
         pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
         pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
 
-# copied and adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
+# HEAVILY from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
     def saveWorld(self):
         newArray = np.full((200, 200, 200), -1)
         for x in range(0, self.gameDims[0]):
@@ -240,9 +240,6 @@ class Minecraft(PygameGame):
                         newArray[x, y, z] = 3
                     elif (self.locationMap[x, y,z].name == "sand"):
                         newArray[x, y, z] = 4
-                    # for key, value in Minecraft.blockLib:
-                    #     if (key == self.locationMap[x, y, z].name):
-                    #         nameArray[x, y, z] = 
         
         outfile = open("test.txt", "w")
             # I'm writing a header here just for the sake of readability
@@ -261,37 +258,32 @@ class Minecraft(PygameGame):
             # Writing out a break to indicate different slices...
             outfile.write('# New slice\n')
 
-# copied and adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
+# HEAVILY adapted from: https://python-decompiler.com/article/2010-09/how-to-write-a-multidimensional-array-to-a-text-file
     def openWorld(self, filePath):
-        print("loading file...")
+        print("Loading file...")
         newArray = np.loadtxt(filePath).reshape(self.gameDims)
-        print("I've loaded file")
+        print("File loaded... Parsing file...")
         for x in range(0, self.gameDims[0]):
             for y in range(0, self.gameDims[1]):
                 for z in range(0, self.gameDims[2]):
-                    #print(newArray[x, y, z])
                     if (newArray[x, y, z] == 0):
-                        #print("empty")
                         newObject = BlockObject("empty")
                         self.locationMap[x, y, z] = newObject
                     elif (newArray[x, y, z] == 1):
-                        #print("dirt")
                         newObject = BlockObject("dirt")
                         self.locationMap[x, y, z] = newObject
                     elif (newArray[x, y, z] == 2):
-                        #print("grassDirt")
                         newObject = BlockObject("grassDirt")
                         self.locationMap[x, y, z] = newObject
                     elif (newArray[x, y, z] == 3):
-                        #print("stone")
                         newObject = BlockObject("stone")
                         self.locationMap[x, y, z] = newObject
                     elif (newArray[x, y, z] == 4):
-                        #print("sand")
                         newObject = BlockObject("sand")
                         self.locationMap[x, y, z] = newObject
                         self.gameBlockGroup.add(newObject)
-        print(self.locationMap[100, 100, 93])
+        print("File parsed, game ready!")
+        self.startGame()
 
     def mousePressed(self, x, y):
         if (not self.isPlaying):
