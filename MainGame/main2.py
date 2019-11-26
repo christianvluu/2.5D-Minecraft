@@ -175,6 +175,23 @@ class Player(pygame.sprite.Sprite):
         screen.blit(self.surfPlusY, (drawX, drawY))
 
 
+class Button(pygame.sprite.Sprite):
+    def __init__(self, imageLoc, buttonDims, pos): # x and y is position on screen
+        super().__init__()
+        self.image = pygame.transform.scale(pygame.image.load(imageLoc), buttonDims)
+        self.rect = self.image.get_rect()
+        # declaring variables for sprites: http://programarcadegames.com/index.php?chapter=introduction_to_sprites
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+class MouseCursor(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        self.image = pygame.Surface((0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
 class Minecraft(PygameGame):
     blockTex = None
     blockLib = None
@@ -190,18 +207,50 @@ class Minecraft(PygameGame):
         self.margin = 25
         self.renderDist = 5  # blocks from user
         Minecraft.blockXWidth = (self.width - 2*self.margin)//(2*self.renderDist)
+        self.isPlaying = False
         # background from http://www.tassal.com.au/sustainability/blue-background-png/
         self.background = pygame.image.load("background.png")
-        self.screen.blit(self.background, (0, 0))
         self.gameBlockGroup = pygame.sprite.Group()
         self.initBlockLibrary()  # group textures
         self.perspective = 1 # default perspective, with origin up top
-        # self.createFlatWorld(self.locationMap, self.gameBlockGroup, self.gameDims)
         self.seed = seed
         self.sigma = sigma
-        self.createRandomWorld(self.locationMap, self.gameBlockGroup, self.gameDims, self.seed, self.sigma)
-        print("hello")
         self.player = Player((self.gameDims[0]//2, self.gameDims[1]//2, self.gameDims[2]//2 + 1)) # player pos is above the block player is standing on
+        self.startScreen() # display the startscreen
+    
+    def startGameRandomWorld(self):
+        self.createRandomWorld(self.locationMap, self.gameBlockGroup, self.gameDims, self.seed, self.sigma)
+    
+    def startGameFlatlandWorld(self):
+        self.createFlatWorld(self.locationMap, self.gameBlockGroup, self.gameDims)
+
+    def startScreen(self):
+        self.startScreenElements = pygame.sprite.Group()
+        self.buttonCollisions = []
+        self.mouseCursor = MouseCursor((-1, -1)) # init off the screen
+        # background for intro taken from: https://i.ytimg.com/vi/s6gS3RZ_kXw/maxresdefault.jpg
+        introBackground = pygame.transform.scale(pygame.image.load("minecraftintro.png"), (self.width, self.height))
+        self.screen.blit(introBackground, (0,0))
+        buttonDims = (120, 30)
+        randomWorldPos = (self.width/2 - 130, self.height/2)
+        flatlandWorldPos = (self.width/2 + 10, self.height/2)
+        self.randomWorldButton = Button("randomworldbutton.png", buttonDims, randomWorldPos)
+        self.startScreenElements.add(self.randomWorldButton)
+        self.flatlandWorldButton = Button("flatlandworldbutton.png", buttonDims, flatlandWorldPos)
+        self.startScreenElements.add(self.flatlandWorldButton)
+        self.startScreenElements.draw(self.screen)
+        if (self.isPlaying):
+            self.startGame() # start the game
+    
+    def clickButton(self, x, y):
+        self.buttonCollisions = pygame.sprite.spritecollide(self.mouseCursor, self.startScreenElements, False, pygame.sprite.collide_rect_ratio(1))
+        for collision in self.buttonCollisions:
+            if (collision == self.randomWorldButton):
+                self.isPlaying = True
+                self.startGameRandomWorld()
+            elif (collision == self.flatlandWorldButton):
+                self.isPlaying = True
+                self.startGameFlatlandWorld()
 
     def initBlockLibrary(self):
         scaleToDims = (Minecraft.blockXWidth, Minecraft.blockXWidth)
@@ -327,6 +376,7 @@ class Minecraft(PygameGame):
         blockSurface = Minecraft.blockLib[block.name]
         #drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + self.margin - Minecraft.blockXWidth
         if (perspective == 1): # default perspective, with origin at center top
+            # Isometric drawing VERY HEAVILY adapted from http://clintbellanger.net/articles/isometric_math/
             drawX = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2 - Minecraft.blockXWidth
             drawY = ((x - posX) + (y - posY))*Minecraft.blockXWidth/(2*2) + self.height/2 - Minecraft.blockXWidth/(2*2) - (z - posZ)*Minecraft.blockXWidth/2
         elif (perspective == 2): # rotated map 90 degrees top down view
@@ -343,63 +393,11 @@ class Minecraft(PygameGame):
         pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
         pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
 
-# Isometric drawing VERY HEAVILY adapted from http://clintbellanger.net/articles/isometric_math/
-    def drawBlockColors(self, screen, blockObj, centerPos, playerPos):
-        posX = playerPos[0]
-        posY = playerPos[1]
-        posZ = playerPos[2] - 1  # player pos is above the block player is standing on so need to -1 to draw
-        x = centerPos[0]
-        y = centerPos[1]
-        z = centerPos[2]
-        # right corner top surface
-        x0 = ((x - posX) - (y - posY))*Minecraft.blockXWidth/2 + self.width/2 + Minecraft.blockXWidth/2
-        y0 = ((x - posX) + (y - posY))*Minecraft.blockXWidth/(2*2) + self.height/2 - (z - posZ)*Minecraft.blockXWidth/2
-        # bottom corner top surface
-        x1 = x0 - Minecraft.blockXWidth/2
-        y1 = y0 + Minecraft.blockXWidth/(2*2)
-        # left corner top surface
-        x2 = x0 - Minecraft.blockXWidth
-        y2 = y0
-        # top corner top surface
-        x3 = x0 - Minecraft.blockXWidth/2
-        y3 = y0 - Minecraft.blockXWidth/(2*2)
-        posTopSurface = [(x0, y0), (x1, y1), (x2, y2), (x3, y3)] # draw from right corner CLOCKWISE
-        pygame.draw.polygon(screen, (255, 255, 255), posTopSurface)
-        pygame.draw.line(screen, (255, 255, 255), (self.width/2, 0), (self.width/2, self.height))
-        pygame.draw.line(screen, (255, 255, 255), (0, self.height/2), (self.width, self.height/2))
-
-        # top right corner left surface
-        x0Left = x1
-        y0Left = y1
-        # bottom right corner left surface
-        x1Left = x0Left
-        y1Left = y0Left + Minecraft.blockXWidth/2
-        # bottom left corner left surface
-        x2Left = x1Left - Minecraft.blockXWidth/2
-        y2Left = y0Left + Minecraft.blockXWidth/(2*2)
-        # top left corner left surface
-        x3Left = x2Left
-        y3Left = y2Left - Minecraft.blockXWidth/2
-        posLeftSurface = [(x0Left, y0Left), (x1Left, y1Left), (x2Left, y2Left), (x3Left, y3Left)]
-        pygame.draw.polygon(screen, (0, 0, 0), posLeftSurface)
-
-        # top right corner right surface
-        x0Right = x0
-        y0Right = y0
-        # bottom right corner right surface
-        x1Right = x0Right
-        y1Right = y0Right + Minecraft.blockXWidth/2
-        # bottom left corner right surface
-        x2Right = x1Right - Minecraft.blockXWidth/2
-        y2Right = y1Right + Minecraft.blockXWidth/(2*2)
-        # top left corner right surface
-        x3Right = x2Right
-        y3Right = y2Right - Minecraft.blockXWidth/2
-        posRightSurface = [(x0Right, y0Right), (x1Right, y1Right), (x2Right, y2Right), (x3Right, y3Right)]
-        pygame.draw.polygon(screen, (255, 0, 0), posRightSurface)
-
     def mousePressed(self, x, y):
-        pass
+        if (not self.isPlaying):
+            self.mouseCursor.rect.x = x
+            self.mouseCursor.rect.y = y
+            self.clickButton(x, y)
 
     def mouseReleased(self, x, y):
         pass
@@ -411,112 +409,113 @@ class Minecraft(PygameGame):
         pass
 
     def keyPressed(self, keyCode, modifier):
-        if (keyCode == pygame.K_w and modifier == 0): # 1 is holding shift down
-            if (self.perspective == 1):
-                self.player.move(-1, 0, 0, self.locationMap)
-            elif (self.perspective == 2):
-                self.player.move(0, 1, 0, self.locationMap)
-        elif (keyCode == pygame.K_s and modifier == 0):
-            if (self.perspective == 1):
-                self.player.move(1, 0, 0, self.locationMap)
-            elif (self.perspective == 2):
-                self.player.move(0, -1, 0, self.locationMap)
-        elif (keyCode == pygame.K_d and modifier == 0):
-            if (self.perspective == 1):
-                self.player.move(0, -1, 0, self.locationMap)
-            elif (self.perspective == 2):
-                self.player.move(-1, 0, 0, self.locationMap)
-        elif (keyCode == pygame.K_a and modifier == 0):
-            if (self.perspective == 1):
-                self.player.move(0, 1, 0, self.locationMap)
-            elif (self.perspective == 2):
-                self.player.move(+1, 0, 0, self.locationMap)
-        elif (keyCode == pygame.K_e and modifier == 0):  # move up into sky
-            self.player.move(0, 0, 1, self.locationMap)
-        elif (keyCode == pygame.K_q and modifier == 0):  # move down into ground
-            self.player.move(0, 0, -1, self.locationMap)
-        
-        elif (keyCode == pygame.K_UP and modifier == 1): # 1 is left shift
-            if (self.perspective == 1):
-                self.player.direction = "-x"
-            elif (self.perspective == 2):
-                self.player.direction = "+y"
-            self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
-        elif (keyCode == pygame.K_DOWN and modifier == 1):
-            if (self.perspective == 1):
-                self.player.direction = "+x"
-            elif (self.perspective == 2):
-                self.player.direction = "-y"
-            self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
-        elif (keyCode == pygame.K_RIGHT and modifier == 1):
-            if (self.perspective == 1):
-                self.player.direction = "-y"
-            elif (self.perspective == 2):
-                self.player.direction = "-x"
-            self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
-        elif (keyCode == pygame.K_LEFT and modifier == 1):
-            if (self.perspective == 1):
-                self.player.direction = "+y"
-            elif (self.perspective == 2):
-                self.player.direction = "+x"
-            self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
-        
-        # use arrow keys to place block, if NOT holding left control, place block at feet level
-        elif (keyCode == pygame.K_UP and modifier == 0): # 0 is no modifier
-            if (self.perspective == 1):
-                self.player.direction = "-x"
-            elif (self.perspective == 2):
-                self.player.direction = "+y"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
-        elif (keyCode == pygame.K_DOWN and modifier == 0):
-            if (self.perspective == 1):
-                self.player.direction = "+x"
-            elif (self.perspective == 2):
-                self.player.direction = "-y"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
-        elif (keyCode == pygame.K_RIGHT and modifier == 0):
-            if (self.perspective == 1):
-                self.player.direction = "-y"
-            elif (self.perspective == 2):
-                self.player.direction = "-x"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
-        elif (keyCode == pygame.K_LEFT and modifier == 0):
-            if (self.perspective == 1):
-                self.player.direction = "+y"
-            elif (self.perspective == 2):
-                self.player.direction = "+x"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
-        
-        # use arrow keys to place block, if holding left control also, place block at head level
-        elif (keyCode == pygame.K_UP and modifier == 64): # 64 is no left control
-            if (self.perspective == 1):
-                self.player.direction = "-x"
-            elif (self.perspective == 2):
-                self.player.direction = "+y"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
-        elif (keyCode == pygame.K_DOWN and modifier == 64):
-            if (self.perspective == 1):
-                self.player.direction = "-y"
-            elif (self.perspective == 2):
-                self.player.direction = "-x"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
-        elif (keyCode == pygame.K_RIGHT and modifier == 64):
-            if (self.perspective == 1):
-                self.player.direction = "-y"
-            elif (self.perspective == 2):
-                self.player.direction = "-x"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
-        elif (keyCode == pygame.K_LEFT and modifier == 64):
-            if (self.perspective == 1):
-                self.player.direction = "+y"
-            elif (self.perspective == 2):
-                self.player.direction = "+x"
-            self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
-        
-        elif (keyCode == pygame.K_1):
-            self.perspective = 1
-        elif (keyCode == pygame.K_2):
-            self.perspective = 2
+        if (self.isPlaying):
+            if (keyCode == pygame.K_w and modifier == 0): # 1 is holding shift down
+                if (self.perspective == 1):
+                    self.player.move(-1, 0, 0, self.locationMap)
+                elif (self.perspective == 2):
+                    self.player.move(0, 1, 0, self.locationMap)
+            elif (keyCode == pygame.K_s and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.move(1, 0, 0, self.locationMap)
+                elif (self.perspective == 2):
+                    self.player.move(0, -1, 0, self.locationMap)
+            elif (keyCode == pygame.K_d and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.move(0, -1, 0, self.locationMap)
+                elif (self.perspective == 2):
+                    self.player.move(-1, 0, 0, self.locationMap)
+            elif (keyCode == pygame.K_a and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.move(0, 1, 0, self.locationMap)
+                elif (self.perspective == 2):
+                    self.player.move(+1, 0, 0, self.locationMap)
+            elif (keyCode == pygame.K_e and modifier == 0):  # move up into sky
+                self.player.move(0, 0, 1, self.locationMap)
+            elif (keyCode == pygame.K_q and modifier == 0):  # move down into ground
+                self.player.move(0, 0, -1, self.locationMap)
+            
+            elif (keyCode == pygame.K_UP and modifier == 1): # 1 is left shift
+                if (self.perspective == 1):
+                    self.player.direction = "-x"
+                elif (self.perspective == 2):
+                    self.player.direction = "+y"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+            elif (keyCode == pygame.K_DOWN and modifier == 1):
+                if (self.perspective == 1):
+                    self.player.direction = "+x"
+                elif (self.perspective == 2):
+                    self.player.direction = "-y"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+            elif (keyCode == pygame.K_RIGHT and modifier == 1):
+                if (self.perspective == 1):
+                    self.player.direction = "-y"
+                elif (self.perspective == 2):
+                    self.player.direction = "-x"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+            elif (keyCode == pygame.K_LEFT and modifier == 1):
+                if (self.perspective == 1):
+                    self.player.direction = "+y"
+                elif (self.perspective == 2):
+                    self.player.direction = "+x"
+                self.player.destroyBlock(self.locationMap, self.gameBlockGroup)
+            
+            # use arrow keys to place block, if NOT holding left control, place block at feet level
+            elif (keyCode == pygame.K_UP and modifier == 0): # 0 is no modifier
+                if (self.perspective == 1):
+                    self.player.direction = "-x"
+                elif (self.perspective == 2):
+                    self.player.direction = "+y"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+            elif (keyCode == pygame.K_DOWN and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.direction = "+x"
+                elif (self.perspective == 2):
+                    self.player.direction = "-y"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+            elif (keyCode == pygame.K_RIGHT and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.direction = "-y"
+                elif (self.perspective == 2):
+                    self.player.direction = "-x"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+            elif (keyCode == pygame.K_LEFT and modifier == 0):
+                if (self.perspective == 1):
+                    self.player.direction = "+y"
+                elif (self.perspective == 2):
+                    self.player.direction = "+x"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+            
+            # use arrow keys to place block, if holding left control also, place block at head level
+            elif (keyCode == pygame.K_UP and modifier == 64): # 64 is no left control
+                if (self.perspective == 1):
+                    self.player.direction = "-x"
+                elif (self.perspective == 2):
+                    self.player.direction = "+y"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_DOWN and modifier == 64):
+                if (self.perspective == 1):
+                    self.player.direction = "-y"
+                elif (self.perspective == 2):
+                    self.player.direction = "-x"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_RIGHT and modifier == 64):
+                if (self.perspective == 1):
+                    self.player.direction = "-y"
+                elif (self.perspective == 2):
+                    self.player.direction = "-x"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+            elif (keyCode == pygame.K_LEFT and modifier == 64):
+                if (self.perspective == 1):
+                    self.player.direction = "+y"
+                elif (self.perspective == 2):
+                    self.player.direction = "+x"
+                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+            
+            elif (keyCode == pygame.K_1):
+                self.perspective = 1
+            elif (keyCode == pygame.K_2):
+                self.perspective = 2
 
     def keyReleased(self, keyCode, modifier):
         pass
@@ -525,7 +524,8 @@ class Minecraft(PygameGame):
         pass
 
     def redrawAll(self, screen):
-        self.drawWorld(screen, self.player.getPos(), self.perspective)
+        if (self.isPlaying):
+            self.drawWorld(screen, self.player.getPos(), self.perspective)
     
 game = Minecraft(123, 1) # input is seed and sigma
         
