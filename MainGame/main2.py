@@ -80,7 +80,7 @@ class Minecraft(PygameGame):
                 self.startGameFlatlandWorld()
             elif (collision == self.openWorldButton):
                 self.isPlaying = True
-                self.openWorld("test.txt")
+                self.openWorld("myworld.txt")
 
     def initBlockLibrary(self):
         scaleToDims = (Minecraft.blockXWidth, Minecraft.blockXWidth)
@@ -241,7 +241,7 @@ class Minecraft(PygameGame):
                     elif (self.locationMap[x, y,z].name == "sand"):
                         newArray[x, y, z] = 4
         
-        outfile = open("test.txt", "w")
+        outfile = open("myworld.txt", "w")
             # I'm writing a header here just for the sake of readability
             # Any line starting with "#" will be ignored by numpy.loadtxt
         outfile.write("# World shape: {0}\n".format(newArray.shape))
@@ -302,7 +302,7 @@ class Minecraft(PygameGame):
 
     def keyPressed(self, keyCode, modifier):
         if (self.isPlaying):
-            if (keyCode == pygame.K_w and modifier == 0): # 1 is holding shift down
+            if (keyCode == pygame.K_w and modifier == 0): # mod = 0 is no mod pressed
                 if (self.perspective == 1):
                     self.player.move(-1, 0, 0, self.locationMap)
                 elif (self.perspective == 2):
@@ -322,10 +322,6 @@ class Minecraft(PygameGame):
                     self.player.move(0, 1, 0, self.locationMap)
                 elif (self.perspective == 2):
                     self.player.move(+1, 0, 0, self.locationMap)
-            elif (keyCode == pygame.K_e and modifier == 0):  # move up into sky
-                self.player.move(0, 0, 1, self.locationMap)
-            elif (keyCode == pygame.K_q and modifier == 0):  # move down into ground
-                self.player.move(0, 0, -1, self.locationMap)
             
             elif (keyCode == pygame.K_UP and modifier == 1): # 1 is left shift
                 if (self.perspective == 1):
@@ -435,10 +431,12 @@ class Minecraft(PygameGame):
             elif (keyCode == pygame.K_s and modifier == 64): # save game by CTRL + s
                 self.saveWorld()
             
-            elif (keyCode == pygame.K_1):
-                self.perspective = 1
-            elif (keyCode == pygame.K_2):
-                self.perspective = 2
+            elif (keyCode == pygame.K_q and modifier == 0):
+                if (self.perspective == 1):
+                    self.perspective = 2
+                elif (self.perspective == 2):
+                    self.perspective = 1
+
 
     def keyReleased(self, keyCode, modifier):
         pass
@@ -446,9 +444,24 @@ class Minecraft(PygameGame):
     def timerFired(self, dt):
         pass
 
+    def drawStats(self):
+        marg = 15 # margins
+        # drawing fronts adapted from: https://www.geeksforgeeks.org/python-display-text-to-pygame-window/
+        font = pygame.font.SysFont("arial", marg)
+        currentBlock = self.player.currentBlock
+        txt = font.render(f"Current Block: {currentBlock}", True, (0, 0, 0))
+        self.screen.blit(txt, (marg, marg))
+
+        txt = font.render(f"X: {self.player.gameX}, Y: {self.player.gameY}, Z: {self.player.gameZ}", True, (0, 0, 0))
+        self.screen.blit(txt, (marg, marg*2))
+
+        txt = font.render(f"Facing Direction: {self.player.direction}", True, (0, 0, 0))
+        self.screen.blit(txt, (marg, marg*3))
+
     def redrawAll(self, screen):
         if (self.isPlaying):
             self.drawWorld(screen, self.player.getPos(), self.perspective)
+            self.drawStats()
         #print("Player Pos: ", (self.player.gameX, self.player.gameY, self.player.gameZ))
 
 game = Minecraft(123, 1) # input is seed and sigma

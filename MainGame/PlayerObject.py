@@ -8,6 +8,7 @@ class Player(pygame.sprite.Sprite):
         self.gameY = gameCoords[1]
         self.gameZ = gameCoords[2]
         self.direction = "+y"  # facing down to bottom left at first
+        self.currentBlock = "stone"
         # steve image from https://minecraft.gamepedia.com/File:Steve.png
         self.surfPlusY = Player.scale(pygame.image.load("isotex/steve1.png"), blockXWidth)
         # self.surfDownLeft = pygame.image.load("playerdownleft.png")
