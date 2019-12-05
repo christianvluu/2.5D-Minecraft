@@ -12,6 +12,7 @@ class Player(pygame.sprite.Sprite):
         # steve image from https://minecraft.gamepedia.com/File:Steve.png
         self.surfPlusY = Player.scale(pygame.image.load("isotex/steve1.png"), blockXWidth)
         self.surfPlusX = Player.scale(pygame.image.load("isotex/steve2.png"), blockXWidth)
+        # used this image flipper: https://onlinepngtools.com/flip-png-horizontally
         self.surfNegY = Player.scale(pygame.image.load("isotex/steve3.png"), blockXWidth)
         self.surfNegX = Player.scale(pygame.image.load("isotex/steve4.png"), blockXWidth)
         # self.surfDownLeft = pygame.image.load("playerdownleft.png")
