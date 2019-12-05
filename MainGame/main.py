@@ -11,11 +11,6 @@ from PlayerObject import *
 from MouseCursorObject import *
 from ButtonObject import *
 
-########### SEED INPUT HERE ###########
-# RECOMMENDATIONS: 4, 123
-SEED = 4
-########### CHANGE SEED ABOVE #########
-
 class Minecraft(PygameGame):
     blockTex = None
     blockLib = None
@@ -574,6 +569,6 @@ class Minecraft(PygameGame):
             self.drawWorld(screen, self.player.getPos(), self.perspective)
             self.drawStats()
 
-game = Minecraft(SEED, 1) # input is seed and sigma
+game = Minecraft(4, 1) # input is seed and sigma
         
 game.run()
