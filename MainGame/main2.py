@@ -288,6 +288,8 @@ class Minecraft(PygameGame):
                         newArray[x, y, z] = 9
                     elif (self.locationMap[x, y,z].name == "dirtRock"):
                         newArray[x, y, z] = 10
+                    elif (self.locationMap[x, y,z].name == "leaves"):
+                        newArray[x, y, z] = 11
 
         outfile = open("myworld.txt", "w")
             # I'm writing a header here just for the sake of readability
@@ -352,6 +354,10 @@ class Minecraft(PygameGame):
                         self.gameBlockGroup.add(newObject)
                     elif (newArray[x, y, z] == 10):
                         newObject = BlockObject("dirtRock")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 11):
+                        newObject = BlockObject("leaves")
                         self.locationMap[x, y, z] = newObject
                         self.gameBlockGroup.add(newObject)
 
