@@ -24,7 +24,7 @@ class Minecraft(PygameGame):
         # use self.location[x,y,z] to refer to a point
         self.gameDims = (200, 200, 200)
         self.margin = 25
-        self.renderDist = 5  # blocks from user
+        self.renderDist = 6  # blocks from user
         Minecraft.blockXWidth = (self.width - 2*self.margin)//(2*self.renderDist)
         self.isPlaying = False
         # background from http://www.tassal.com.au/sustainability/blue-background-png/
@@ -113,6 +113,10 @@ class Minecraft(PygameGame):
                 Minecraft.scale(pygame.image.load("isotex/dirtrock.png"), scaleToDims),
             "grassStone":
                 Minecraft.scale(pygame.image.load("isotex/grassstone.png"), scaleToDims),
+            "wood":
+                Minecraft.scale(pygame.image.load("isotex/wood.png"), scaleToDims),
+            "leaves":
+                Minecraft.scale(pygame.image.load("isotex/leaves.png"), scaleToDims),
             "empty": "NOTHING"
         }
     
@@ -142,6 +146,38 @@ class Minecraft(PygameGame):
                     newBlock = BlockObject("stone")
                     locationMap[x, y, lowerZ] = newBlock
                     gameBlockGroup.add(newBlock)
+        
+        random.seed(seed) # setting seed
+        startX = random.randint(0, 199)
+        startY = random.randint(0, 199)
+        treeLoc = [(startX, startY)]
+        for i in range(1, 20):
+            spacingX = random.randint(2, 4)
+            spacingY = random.randint(2, 4)
+            startX += spacingX
+            startY += spacingY
+            if (startX >= 199 or startY >= 199):
+                break
+            treeLoc.append((startX, startY))
+        
+        # creating trees
+        for (x, y) in treeLoc:
+            z = 0
+            while (locationMap[x, y, z].name != "empty"):
+                z += 1 # move z up to find an empty spot to place tree
+            for i in range(0, 4):
+                locationMap[x, y, z + i] = BlockObject("wood")
+            locationMap[x - 1, y, z + 3] = BlockObject("leaves")
+            locationMap[x + 1, y, z + 3] = BlockObject("leaves")
+            locationMap[x, y - 1, z + 3] = BlockObject("leaves")
+            locationMap[x, y + 1, z + 3] = BlockObject("leaves")
+            locationMap[x - 1, y - 1, z + 3] = BlockObject("leaves")
+            locationMap[x + 1, y - 1, z + 3] = BlockObject("leaves")
+            locationMap[x - 1, y + 1, z + 3] = BlockObject("leaves")
+            locationMap[x + 1, y + 1, z + 3] = BlockObject("leaves")
+            locationMap[x, y, z + 4] = BlockObject("leaves")
+        print(f"Tree Locations: {treeLoc}")
+        
 
     def createFlatWorld(self, locationMap, gameBlockGroup, gameDims = (200, 200, 200)):
         xSize = gameDims[0]
@@ -240,7 +276,19 @@ class Minecraft(PygameGame):
                         newArray[x, y, z] = 3
                     elif (self.locationMap[x, y,z].name == "sand"):
                         newArray[x, y, z] = 4
-        
+                    elif (self.locationMap[x, y,z].name == "wood"):
+                        newArray[x, y, z] = 5
+                    elif (self.locationMap[x, y,z].name == "snow"):
+                        newArray[x, y, z] = 6
+                    elif (self.locationMap[x, y,z].name == "grass"):
+                        newArray[x, y, z] = 7
+                    elif (self.locationMap[x, y,z].name == "dirtSand"):
+                        newArray[x, y, z] = 8
+                    elif (self.locationMap[x, y,z].name == "grassStone"):
+                        newArray[x, y, z] = 9
+                    elif (self.locationMap[x, y,z].name == "dirtRock"):
+                        newArray[x, y, z] = 10
+
         outfile = open("myworld.txt", "w")
             # I'm writing a header here just for the sake of readability
             # Any line starting with "#" will be ignored by numpy.loadtxt
@@ -282,6 +330,31 @@ class Minecraft(PygameGame):
                         newObject = BlockObject("sand")
                         self.locationMap[x, y, z] = newObject
                         self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 5):
+                        newObject = BlockObject("wood")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 6):
+                        newObject = BlockObject("snow")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 7):
+                        newObject = BlockObject("grass")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 8):
+                        newObject = BlockObject("dirtSand")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 9):
+                        newObject = BlockObject("grassStone")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+                    elif (newArray[x, y, z] == 10):
+                        newObject = BlockObject("dirtRock")
+                        self.locationMap[x, y, z] = newObject
+                        self.gameBlockGroup.add(newObject)
+
         print("File parsed, game ready!")
         self.startGame()
 
@@ -379,25 +452,25 @@ class Minecraft(PygameGame):
                     self.player.direction = "-x"
                 elif (self.perspective == 2):
                     self.player.direction = "+y"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 0)
             elif (keyCode == pygame.K_DOWN and modifier == 0):
                 if (self.perspective == 1):
                     self.player.direction = "+x"
                 elif (self.perspective == 2):
                     self.player.direction = "-y"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 0)
             elif (keyCode == pygame.K_RIGHT and modifier == 0):
                 if (self.perspective == 1):
                     self.player.direction = "-y"
                 elif (self.perspective == 2):
                     self.player.direction = "-x"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 0)
             elif (keyCode == pygame.K_LEFT and modifier == 0):
                 if (self.perspective == 1):
                     self.player.direction = "+y"
                 elif (self.perspective == 2):
                     self.player.direction = "+x"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 0)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 0)
             
             # use arrow keys to place block, if holding left control also, place block at head level
             elif (keyCode == pygame.K_UP and modifier == 64): # 64 is no left control
@@ -405,25 +478,25 @@ class Minecraft(PygameGame):
                     self.player.direction = "-x"
                 elif (self.perspective == 2):
                     self.player.direction = "+y"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 1)
             elif (keyCode == pygame.K_DOWN and modifier == 64):
                 if (self.perspective == 1):
                     self.player.direction = "+x"
                 elif (self.perspective == 2):
                     self.player.direction = "-y"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 1)
             elif (keyCode == pygame.K_RIGHT and modifier == 64):
                 if (self.perspective == 1):
                     self.player.direction = "-y"
                 elif (self.perspective == 2):
                     self.player.direction = "-x"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 1)
             elif (keyCode == pygame.K_LEFT and modifier == 64):
                 if (self.perspective == 1):
                     self.player.direction = "+y"
                 elif (self.perspective == 2):
                     self.player.direction = "+x"
-                self.player.placeBlock(BlockObject("stone"), self.locationMap, self.gameBlockGroup, 1)
+                self.player.placeBlock(BlockObject(self.player.currentBlock), self.locationMap, self.gameBlockGroup, 1)
             
             elif (keyCode == pygame.K_r and modifier == 64): # reset game by CTRL + r
                 self.__init__(self.seed, self.sigma)
@@ -436,6 +509,25 @@ class Minecraft(PygameGame):
                     self.perspective = 2
                 elif (self.perspective == 2):
                     self.perspective = 1
+
+            elif (keyCode == pygame.K_1): # stone
+                self.player.currentBlock = "stone"
+            elif (keyCode == pygame.K_2): # sand
+                self.player.currentBlock = "sand"
+            elif (keyCode == pygame.K_3):
+                self.player.currentBlock = "dirt"
+            elif (keyCode == pygame.K_4):
+                self.player.currentBlock = "wood"
+            elif (keyCode == pygame.K_5):
+                self.player.currentBlock = "snow"
+            elif (keyCode == pygame.K_6):
+                self.player.currentBlock = "grass"
+            elif (keyCode == pygame.K_7):
+                self.player.currentBlock = "dirtSand"
+            elif (keyCode == pygame.K_8):
+                self.player.currentBlock = "grassStone"
+            elif (keyCode == pygame.K_9):
+                self.player.currentBlock = "dirtRock"
 
 
     def keyReleased(self, keyCode, modifier):
@@ -458,12 +550,19 @@ class Minecraft(PygameGame):
         txt = font.render(f"Facing Direction: {self.player.direction}", True, (0, 0, 0))
         self.screen.blit(txt, (marg, marg*3))
 
+        xyz1Surf = Minecraft.scale(pygame.image.load("otherimg/xyz_1.png"), (70, 70))
+        xyz2Surf = Minecraft.scale(pygame.image.load("otherimg/xyz_2.png"), (70, 70))
+        if (self.perspective == 1):
+            self.screen.blit(xyz1Surf, (marg, marg*4 + 10))
+        elif (self.perspective == 2):
+            self.screen.blit(xyz2Surf, (marg, marg*4 + 10))
+
+
     def redrawAll(self, screen):
         if (self.isPlaying):
             self.drawWorld(screen, self.player.getPos(), self.perspective)
             self.drawStats()
-        #print("Player Pos: ", (self.player.gameX, self.player.gameY, self.player.gameZ))
 
-game = Minecraft(123, 1) # input is seed and sigma
+game = Minecraft(4, 1) # input is seed and sigma
         
 game.run()
