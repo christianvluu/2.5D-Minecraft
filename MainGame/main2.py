@@ -219,7 +219,7 @@ class Minecraft(PygameGame):
                 for y in range(posY - self.renderDist, posY + self.renderDist + 1):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist + 1):
                         if (x <= posX and y <= posY):
-                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height, Minecraft.blockXWidth)
+                            self.player.draw(screen, self.perspective, self.width, self.height, Minecraft.blockXWidth)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos, perspective)
         elif (perspective == 2):
@@ -227,7 +227,7 @@ class Minecraft(PygameGame):
                 for y in range(posY + self.renderDist, posY - self.renderDist - 1, -1):
                     for z in range(posZ - self.renderDist, posZ + self.renderDist):
                         if (x <= posX and y >= posY):
-                            self.player.draw(screen, self.player.surfPlusY, self.width, self.height, Minecraft.blockXWidth)
+                            self.player.draw(screen, self.perspective, self.width, self.height, Minecraft.blockXWidth)
                         self.drawBlock(screen, self.locationMap[x, y, z], (x, y, z),
                             playerPos, perspective)
     

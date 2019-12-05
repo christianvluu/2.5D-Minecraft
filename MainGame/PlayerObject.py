@@ -11,6 +11,9 @@ class Player(pygame.sprite.Sprite):
         self.currentBlock = "stone"
         # steve image from https://minecraft.gamepedia.com/File:Steve.png
         self.surfPlusY = Player.scale(pygame.image.load("isotex/steve1.png"), blockXWidth)
+        self.surfPlusX = Player.scale(pygame.image.load("isotex/steve2.png"), blockXWidth)
+        self.surfNegY = Player.scale(pygame.image.load("isotex/steve3.png"), blockXWidth)
+        self.surfNegX = Player.scale(pygame.image.load("isotex/steve4.png"), blockXWidth)
         # self.surfDownLeft = pygame.image.load("playerdownleft.png")
         # self.surfDownRight = pygame.image.load("playerdownright.png")
         # self.surfUpLeft = pygame.image.load("playerupleft.png")
@@ -174,9 +177,27 @@ class Player(pygame.sprite.Sprite):
                 print("Block NOT destroyed")
                 return False
         
-    def draw(self, screen, surf, gameWidth, gameHeight, blockXWidth):
+    def draw(self, screen, perspective, gameWidth, gameHeight, blockXWidth):
         drawX = gameWidth/2 + blockXWidth/2 - blockXWidth
-        (xSurfSize, ySurfSize) = surf.get_size()
+        (xSurfSize, ySurfSize) = self.surfPlusX.get_size() # all surfs are the same size
         yRealisticShift = blockXWidth/(2*2) # shift a bit to make steve look like he's on the block
         drawY = gameHeight/2 - ySurfSize + yRealisticShift
-        screen.blit(self.surfPlusY, (drawX, drawY))
+        if (perspective == 1):
+            if (self.direction == "+y"):
+                screen.blit(self.surfPlusY, (drawX, drawY))
+            elif (self.direction == "+x"):
+                screen.blit(self.surfPlusX, (drawX, drawY))
+            elif (self.direction == "-y"):
+                screen.blit(self.surfNegY, (drawX, drawY))
+            elif (self.direction == "-x"):
+                screen.blit(self.surfNegX, (drawX, drawY))
+        elif (perspective == 2):
+            if (self.direction == "-y"):
+                screen.blit(self.surfPlusX, (drawX, drawY))
+            elif (self.direction == "+x"):
+                screen.blit(self.surfPlusY, (drawX, drawY))
+            elif (self.direction == "+y"):
+                screen.blit(self.surfNegX, (drawX, drawY))
+            elif (self.direction == "-x"):
+                screen.blit(self.surfNegY, (drawX, drawY))
+
