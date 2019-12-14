@@ -1,7 +1,5 @@
 # 2.5D-Minecraft
 
-This is a project I created for 15-112. A CS class at Carnegie Mellon University.
-
 ## Overview:
 Welcome! This is a game similar to the real Minecraft! But it is drawn Isometrically (2.5D graphics). It’s a simplified version of the full game.
 
