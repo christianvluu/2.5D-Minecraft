@@ -17,7 +17,7 @@ You can change perspectives to more easily view the world as well as place and d
 All the necessary game files (other than external modules) are in the .zip folder downloaded, specifically in the game folder. Just unzip it!
 1. Ensure you have python 3 installed (written specifically in 3.7.4)
 2. Install the numpy and pygame modules with pip
-3. Open the main.py file in the MainGame folder in a python editor
+3. Open the main2.py file in the MainGame folder in a python editor
 4. Edit the seed (if you want) near the top of the file, the variable name is SEED. It is clearly labelled
 5. Run the main.py file to start Isometric Minecraft
 6. Saved worlds will be in the MainGame folder under the name myworld.txt (there can only be one saved world at a time)
